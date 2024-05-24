@@ -1,5 +1,5 @@
 {
-  "name": "secure-ls",
+  "name": "secure-ls-dm",
   "version": "1.2.6",
   "description": "Secure localStorage data with high level of encryption and data compression",
   "main": "./dist/secure-ls.js",
@@ -55,7 +55,7 @@
   },
   "homepage": "https://github.com/softvar/secure-ls",
   "dependencies": {
-    "crypto-js": "^3.1.6",
+    "crypto-js": "^4.2.0",
     "lz-string": "^1.4.4"
   }
 }

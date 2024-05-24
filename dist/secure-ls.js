@@ -70,31 +70,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _constants2 = _interopRequireDefault(_constants);
 	
-	var _encUtf = __webpack_require__(8);
+	var _encUtf = __webpack_require__(9);
 	
 	var _encUtf2 = _interopRequireDefault(_encUtf);
 	
-	var _Base = __webpack_require__(9);
+	var _Base = __webpack_require__(10);
 	
 	var _Base2 = _interopRequireDefault(_Base);
 	
-	var _lzString = __webpack_require__(10);
+	var _lzString = __webpack_require__(11);
 	
 	var _lzString2 = _interopRequireDefault(_lzString);
 	
-	var _aes = __webpack_require__(11);
+	var _aes = __webpack_require__(12);
 	
 	var _aes2 = _interopRequireDefault(_aes);
 	
-	var _tripledes = __webpack_require__(16);
+	var _tripledes = __webpack_require__(18);
 	
 	var _tripledes2 = _interopRequireDefault(_tripledes);
 	
-	var _rabbit = __webpack_require__(17);
+	var _rabbit = __webpack_require__(19);
 	
 	var _rabbit2 = _interopRequireDefault(_rabbit);
 	
-	var _rc = __webpack_require__(18);
+	var _rc = __webpack_require__(20);
 	
 	var _rc2 = _interopRequireDefault(_rc);
 	
@@ -617,11 +617,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(6), __webpack_require__(7));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(7), __webpack_require__(8));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
-			define(["./core", "./sha1", "./hmac"], factory);
+			define(["./core", "./sha256", "./hmac"], factory);
 		}
 		else {
 			// Global (browser)
@@ -636,7 +636,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		    var Base = C_lib.Base;
 		    var WordArray = C_lib.WordArray;
 		    var C_algo = C.algo;
-		    var SHA1 = C_algo.SHA1;
+		    var SHA256 = C_algo.SHA256;
 		    var HMAC = C_algo.HMAC;
 	
 		    /**
@@ -647,13 +647,13 @@ return /******/ (function(modules) { // webpackBootstrap
 		         * Configuration options.
 		         *
 		         * @property {number} keySize The key size in words to generate. Default: 4 (128 bits)
-		         * @property {Hasher} hasher The hasher to use. Default: SHA1
-		         * @property {number} iterations The number of iterations to perform. Default: 1
+		         * @property {Hasher} hasher The hasher to use. Default: SHA256
+		         * @property {number} iterations The number of iterations to perform. Default: 250000
 		         */
 		        cfg: Base.extend({
 		            keySize: 128/32,
-		            hasher: SHA1,
-		            iterations: 1
+		            hasher: SHA256,
+		            iterations: 250000
 		        }),
 	
 		        /**
@@ -764,7 +764,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	;(function (root, factory) {
+	/* WEBPACK VAR INJECTION */(function(global) {;(function (root, factory) {
 		if (true) {
 			// CommonJS
 			module.exports = exports = factory();
@@ -779,15 +779,78 @@ return /******/ (function(modules) { // webpackBootstrap
 		}
 	}(this, function () {
 	
+		/*globals window, global, require*/
+	
 		/**
 		 * CryptoJS core components.
 		 */
 		var CryptoJS = CryptoJS || (function (Math, undefined) {
+	
+		    var crypto;
+	
+		    // Native crypto from window (Browser)
+		    if (typeof window !== 'undefined' && window.crypto) {
+		        crypto = window.crypto;
+		    }
+	
+		    // Native crypto in web worker (Browser)
+		    if (typeof self !== 'undefined' && self.crypto) {
+		        crypto = self.crypto;
+		    }
+	
+		    // Native crypto from worker
+		    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+		        crypto = globalThis.crypto;
+		    }
+	
+		    // Native (experimental IE 11) crypto from window (Browser)
+		    if (!crypto && typeof window !== 'undefined' && window.msCrypto) {
+		        crypto = window.msCrypto;
+		    }
+	
+		    // Native crypto from global (NodeJS)
+		    if (!crypto && typeof global !== 'undefined' && global.crypto) {
+		        crypto = global.crypto;
+		    }
+	
+		    // Native crypto import via require (NodeJS)
+		    if (!crypto && "function" === 'function') {
+		        try {
+		            crypto = __webpack_require__(6);
+		        } catch (err) {}
+		    }
+	
 		    /*
-		     * Local polyfil of Object.create
+		     * Cryptographically secure pseudorandom number generator
+		     *
+		     * As Math.random() is cryptographically not safe to use
+		     */
+		    var cryptoSecureRandomInt = function () {
+		        if (crypto) {
+		            // Use getRandomValues method (Browser)
+		            if (typeof crypto.getRandomValues === 'function') {
+		                try {
+		                    return crypto.getRandomValues(new Uint32Array(1))[0];
+		                } catch (err) {}
+		            }
+	
+		            // Use randomBytes method (NodeJS)
+		            if (typeof crypto.randomBytes === 'function') {
+		                try {
+		                    return crypto.randomBytes(4).readInt32LE();
+		                } catch (err) {}
+		            }
+		        }
+	
+		        throw new Error('Native crypto module could not be used to get secure random number.');
+		    };
+	
+		    /*
+		     * Local polyfill of Object.create
+	
 		     */
 		    var create = Object.create || (function () {
-		        function F() {};
+		        function F() {}
 	
 		        return function (obj) {
 		            var subtype;
@@ -800,7 +863,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 		            return subtype;
 		        };
-		    }())
+		    }());
 	
 		    /**
 		     * CryptoJS namespace.
@@ -1011,8 +1074,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		                }
 		            } else {
 		                // Copy one word at a time
-		                for (var i = 0; i < thatSigBytes; i += 4) {
-		                    thisWords[(thisSigBytes + i) >>> 2] = thatWords[i >>> 2];
+		                for (var j = 0; j < thatSigBytes; j += 4) {
+		                    thisWords[(thisSigBytes + j) >>> 2] = thatWords[j >>> 2];
 		                }
 		            }
 		            this.sigBytes += thatSigBytes;
@@ -1070,26 +1133,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		        random: function (nBytes) {
 		            var words = [];
 	
-		            var r = (function (m_w) {
-		                var m_w = m_w;
-		                var m_z = 0x3ade68b1;
-		                var mask = 0xffffffff;
-	
-		                return function () {
-		                    m_z = (0x9069 * (m_z & 0xFFFF) + (m_z >> 0x10)) & mask;
-		                    m_w = (0x4650 * (m_w & 0xFFFF) + (m_w >> 0x10)) & mask;
-		                    var result = ((m_z << 0x10) + m_w) & mask;
-		                    result /= 0x100000000;
-		                    result += 0.5;
-		                    return result * (Math.random() > .5 ? 1 : -1);
-		                }
-		            });
-	
-		            for (var i = 0, rcache; i < nBytes; i += 4) {
-		                var _r = r((rcache || Math.random()) * 0x100000000);
-	
-		                rcache = _r() * 0x3ade67b7;
-		                words.push((_r() * 0x100000000) | 0);
+		            for (var i = 0; i < nBytes; i += 4) {
+		                words.push(cryptoSecureRandomInt());
 		            }
 	
 		            return new WordArray.init(words, nBytes);
@@ -1320,6 +1365,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		         *     var processedData = bufferedBlockAlgorithm._process(!!'flush');
 		         */
 		        _process: function (doFlush) {
+		            var processedWords;
+	
 		            // Shortcuts
 		            var data = this._data;
 		            var dataWords = data.words;
@@ -1352,7 +1399,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		                }
 	
 		                // Remove processed words
-		                var processedWords = dataWords.splice(0, nWordsReady);
+		                processedWords = dataWords.splice(0, nWordsReady);
 		                data.sigBytes -= nBytesReady;
 		            }
 	
@@ -1524,9 +1571,16 @@ return /******/ (function(modules) { // webpackBootstrap
 		return CryptoJS;
 	
 	}));
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 6 */
+/***/ function(module, exports) {
+
+	/* (ignored) */
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -1544,7 +1598,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		}
 	}(this, function (CryptoJS) {
 	
-		(function () {
+		(function (Math) {
 		    // Shortcuts
 		    var C = CryptoJS;
 		    var C_lib = C.lib;
@@ -1552,19 +1606,52 @@ return /******/ (function(modules) { // webpackBootstrap
 		    var Hasher = C_lib.Hasher;
 		    var C_algo = C.algo;
 	
+		    // Initialization and round constants tables
+		    var H = [];
+		    var K = [];
+	
+		    // Compute constants
+		    (function () {
+		        function isPrime(n) {
+		            var sqrtN = Math.sqrt(n);
+		            for (var factor = 2; factor <= sqrtN; factor++) {
+		                if (!(n % factor)) {
+		                    return false;
+		                }
+		            }
+	
+		            return true;
+		        }
+	
+		        function getFractionalBits(n) {
+		            return ((n - (n | 0)) * 0x100000000) | 0;
+		        }
+	
+		        var n = 2;
+		        var nPrime = 0;
+		        while (nPrime < 64) {
+		            if (isPrime(n)) {
+		                if (nPrime < 8) {
+		                    H[nPrime] = getFractionalBits(Math.pow(n, 1 / 2));
+		                }
+		                K[nPrime] = getFractionalBits(Math.pow(n, 1 / 3));
+	
+		                nPrime++;
+		            }
+	
+		            n++;
+		        }
+		    }());
+	
 		    // Reusable object
 		    var W = [];
 	
 		    /**
-		     * SHA-1 hash algorithm.
+		     * SHA-256 hash algorithm.
 		     */
-		    var SHA1 = C_algo.SHA1 = Hasher.extend({
+		    var SHA256 = C_algo.SHA256 = Hasher.extend({
 		        _doReset: function () {
-		            this._hash = new WordArray.init([
-		                0x67452301, 0xefcdab89,
-		                0x98badcfe, 0x10325476,
-		                0xc3d2e1f0
-		            ]);
+		            this._hash = new WordArray.init(H.slice(0));
 		        },
 	
 		        _doProcessBlock: function (M, offset) {
@@ -1577,32 +1664,45 @@ return /******/ (function(modules) { // webpackBootstrap
 		            var c = H[2];
 		            var d = H[3];
 		            var e = H[4];
+		            var f = H[5];
+		            var g = H[6];
+		            var h = H[7];
 	
 		            // Computation
-		            for (var i = 0; i < 80; i++) {
+		            for (var i = 0; i < 64; i++) {
 		                if (i < 16) {
 		                    W[i] = M[offset + i] | 0;
 		                } else {
-		                    var n = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
-		                    W[i] = (n << 1) | (n >>> 31);
+		                    var gamma0x = W[i - 15];
+		                    var gamma0  = ((gamma0x << 25) | (gamma0x >>> 7))  ^
+		                                  ((gamma0x << 14) | (gamma0x >>> 18)) ^
+		                                   (gamma0x >>> 3);
+	
+		                    var gamma1x = W[i - 2];
+		                    var gamma1  = ((gamma1x << 15) | (gamma1x >>> 17)) ^
+		                                  ((gamma1x << 13) | (gamma1x >>> 19)) ^
+		                                   (gamma1x >>> 10);
+	
+		                    W[i] = gamma0 + W[i - 7] + gamma1 + W[i - 16];
 		                }
 	
-		                var t = ((a << 5) | (a >>> 27)) + e + W[i];
-		                if (i < 20) {
-		                    t += ((b & c) | (~b & d)) + 0x5a827999;
-		                } else if (i < 40) {
-		                    t += (b ^ c ^ d) + 0x6ed9eba1;
-		                } else if (i < 60) {
-		                    t += ((b & c) | (b & d) | (c & d)) - 0x70e44324;
-		                } else /* if (i < 80) */ {
-		                    t += (b ^ c ^ d) - 0x359d3e2a;
-		                }
+		                var ch  = (e & f) ^ (~e & g);
+		                var maj = (a & b) ^ (a & c) ^ (b & c);
 	
-		                e = d;
+		                var sigma0 = ((a << 30) | (a >>> 2)) ^ ((a << 19) | (a >>> 13)) ^ ((a << 10) | (a >>> 22));
+		                var sigma1 = ((e << 26) | (e >>> 6)) ^ ((e << 21) | (e >>> 11)) ^ ((e << 7)  | (e >>> 25));
+	
+		                var t1 = h + sigma1 + ch + K[i] + W[i];
+		                var t2 = sigma0 + maj;
+	
+		                h = g;
+		                g = f;
+		                f = e;
+		                e = (d + t1) | 0;
 		                d = c;
-		                c = (b << 30) | (b >>> 2);
+		                c = b;
 		                b = a;
-		                a = t;
+		                a = (t1 + t2) | 0;
 		            }
 	
 		            // Intermediate hash value
@@ -1611,6 +1711,9 @@ return /******/ (function(modules) { // webpackBootstrap
 		            H[2] = (H[2] + c) | 0;
 		            H[3] = (H[3] + d) | 0;
 		            H[4] = (H[4] + e) | 0;
+		            H[5] = (H[5] + f) | 0;
+		            H[6] = (H[6] + g) | 0;
+		            H[7] = (H[7] + h) | 0;
 		        },
 	
 		        _doFinalize: function () {
@@ -1653,10 +1756,10 @@ return /******/ (function(modules) { // webpackBootstrap
 		     *
 		     * @example
 		     *
-		     *     var hash = CryptoJS.SHA1('message');
-		     *     var hash = CryptoJS.SHA1(wordArray);
+		     *     var hash = CryptoJS.SHA256('message');
+		     *     var hash = CryptoJS.SHA256(wordArray);
 		     */
-		    C.SHA1 = Hasher._createHelper(SHA1);
+		    C.SHA256 = Hasher._createHelper(SHA256);
 	
 		    /**
 		     * Shortcut function to the HMAC's object interface.
@@ -1670,18 +1773,18 @@ return /******/ (function(modules) { // webpackBootstrap
 		     *
 		     * @example
 		     *
-		     *     var hmac = CryptoJS.HmacSHA1(message, key);
+		     *     var hmac = CryptoJS.HmacSHA256(message, key);
 		     */
-		    C.HmacSHA1 = Hasher._createHmacHelper(SHA1);
-		}());
+		    C.HmacSHA256 = Hasher._createHmacHelper(SHA256);
+		}(Math));
 	
 	
-		return CryptoJS.SHA1;
+		return CryptoJS.SHA256;
 	
 	}));
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -1829,7 +1932,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1874,7 +1977,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = enc;
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1992,7 +2095,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Base64;
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;// Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>
@@ -2499,13 +2602,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(12), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15), __webpack_require__(17));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -2595,6 +2698,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		     */
 		    var AES = C_algo.AES = BlockCipher.extend({
 		        _doReset: function () {
+		            var t;
+	
 		            // Skip reset of nRounds has been set before and key did not change
 		            if (this._nRounds && this._keyPriorReset === this._key) {
 		                return;
@@ -2617,7 +2722,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		                if (ksRow < keySize) {
 		                    keySchedule[ksRow] = keyWords[ksRow];
 		                } else {
-		                    var t = keySchedule[ksRow - 1];
+		                    t = keySchedule[ksRow - 1];
 	
 		                    if (!(ksRow % keySize)) {
 		                        // Rot word
@@ -2736,7 +2841,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -2862,7 +2967,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		          if (i % 4) {
 		              var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
 		              var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
-		              words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
+		              var bitsCombined = bits1 | bits2;
+		              words[nBytes >>> 2] |= bitsCombined << (24 - (nBytes % 4) * 8);
 		              nBytes++;
 		          }
 		      }
@@ -2876,7 +2982,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -2956,7 +3062,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		            var M_offset_14 = M[offset + 14];
 		            var M_offset_15 = M[offset + 15];
 	
-		            // Working varialbes
+		            // Working variables
 		            var a = H[0];
 		            var b = H[1];
 		            var c = H[2];
@@ -3149,13 +3255,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(6), __webpack_require__(7));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(16), __webpack_require__(8));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -3222,6 +3328,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		         *     var key = kdf.compute(password, salt);
 		         */
 		        compute: function (password, salt) {
+		            var block;
+	
 		            // Shortcut
 		            var cfg = this.cfg;
 	
@@ -3241,7 +3349,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		                if (block) {
 		                    hasher.update(block);
 		                }
-		                var block = hasher.update(password).finalize(salt);
+		                block = hasher.update(password).finalize(salt);
 		                hasher.reset();
 	
 		                // Iterations
@@ -3286,7 +3394,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory) {
@@ -3297,6 +3405,161 @@ return /******/ (function(modules) { // webpackBootstrap
 		else if (typeof define === "function" && define.amd) {
 			// AMD
 			define(["./core"], factory);
+		}
+		else {
+			// Global (browser)
+			factory(root.CryptoJS);
+		}
+	}(this, function (CryptoJS) {
+	
+		(function () {
+		    // Shortcuts
+		    var C = CryptoJS;
+		    var C_lib = C.lib;
+		    var WordArray = C_lib.WordArray;
+		    var Hasher = C_lib.Hasher;
+		    var C_algo = C.algo;
+	
+		    // Reusable object
+		    var W = [];
+	
+		    /**
+		     * SHA-1 hash algorithm.
+		     */
+		    var SHA1 = C_algo.SHA1 = Hasher.extend({
+		        _doReset: function () {
+		            this._hash = new WordArray.init([
+		                0x67452301, 0xefcdab89,
+		                0x98badcfe, 0x10325476,
+		                0xc3d2e1f0
+		            ]);
+		        },
+	
+		        _doProcessBlock: function (M, offset) {
+		            // Shortcut
+		            var H = this._hash.words;
+	
+		            // Working variables
+		            var a = H[0];
+		            var b = H[1];
+		            var c = H[2];
+		            var d = H[3];
+		            var e = H[4];
+	
+		            // Computation
+		            for (var i = 0; i < 80; i++) {
+		                if (i < 16) {
+		                    W[i] = M[offset + i] | 0;
+		                } else {
+		                    var n = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
+		                    W[i] = (n << 1) | (n >>> 31);
+		                }
+	
+		                var t = ((a << 5) | (a >>> 27)) + e + W[i];
+		                if (i < 20) {
+		                    t += ((b & c) | (~b & d)) + 0x5a827999;
+		                } else if (i < 40) {
+		                    t += (b ^ c ^ d) + 0x6ed9eba1;
+		                } else if (i < 60) {
+		                    t += ((b & c) | (b & d) | (c & d)) - 0x70e44324;
+		                } else /* if (i < 80) */ {
+		                    t += (b ^ c ^ d) - 0x359d3e2a;
+		                }
+	
+		                e = d;
+		                d = c;
+		                c = (b << 30) | (b >>> 2);
+		                b = a;
+		                a = t;
+		            }
+	
+		            // Intermediate hash value
+		            H[0] = (H[0] + a) | 0;
+		            H[1] = (H[1] + b) | 0;
+		            H[2] = (H[2] + c) | 0;
+		            H[3] = (H[3] + d) | 0;
+		            H[4] = (H[4] + e) | 0;
+		        },
+	
+		        _doFinalize: function () {
+		            // Shortcuts
+		            var data = this._data;
+		            var dataWords = data.words;
+	
+		            var nBitsTotal = this._nDataBytes * 8;
+		            var nBitsLeft = data.sigBytes * 8;
+	
+		            // Add padding
+		            dataWords[nBitsLeft >>> 5] |= 0x80 << (24 - nBitsLeft % 32);
+		            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 14] = Math.floor(nBitsTotal / 0x100000000);
+		            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 15] = nBitsTotal;
+		            data.sigBytes = dataWords.length * 4;
+	
+		            // Hash final blocks
+		            this._process();
+	
+		            // Return final computed hash
+		            return this._hash;
+		        },
+	
+		        clone: function () {
+		            var clone = Hasher.clone.call(this);
+		            clone._hash = this._hash.clone();
+	
+		            return clone;
+		        }
+		    });
+	
+		    /**
+		     * Shortcut function to the hasher's object interface.
+		     *
+		     * @param {WordArray|string} message The message to hash.
+		     *
+		     * @return {WordArray} The hash.
+		     *
+		     * @static
+		     *
+		     * @example
+		     *
+		     *     var hash = CryptoJS.SHA1('message');
+		     *     var hash = CryptoJS.SHA1(wordArray);
+		     */
+		    C.SHA1 = Hasher._createHelper(SHA1);
+	
+		    /**
+		     * Shortcut function to the HMAC's object interface.
+		     *
+		     * @param {WordArray|string} message The message to hash.
+		     * @param {WordArray|string} key The secret key.
+		     *
+		     * @return {WordArray} The HMAC.
+		     *
+		     * @static
+		     *
+		     * @example
+		     *
+		     *     var hmac = CryptoJS.HmacSHA1(message, key);
+		     */
+		    C.HmacSHA1 = Hasher._createHmacHelper(SHA1);
+		}());
+	
+	
+		return CryptoJS.SHA1;
+	
+	}));
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	;(function (root, factory, undef) {
+		if (true) {
+			// CommonJS
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(15));
+		}
+		else if (typeof define === "function" && define.amd) {
+			// AMD
+			define(["./core", "./evpkdf"], factory);
 		}
 		else {
 			// Global (browser)
@@ -3642,17 +3905,19 @@ return /******/ (function(modules) { // webpackBootstrap
 		        });
 	
 		        function xorBlock(words, offset, blockSize) {
+		            var block;
+	
 		            // Shortcut
 		            var iv = this._iv;
 	
 		            // Choose mixing block
 		            if (iv) {
-		                var block = iv;
+		                block = iv;
 	
 		                // Remove IV for subsequent blocks
 		                this._iv = undefined;
 		            } else {
-		                var block = this._prevBlock;
+		                block = this._prevBlock;
 		            }
 	
 		            // XOR blocks
@@ -3744,6 +4009,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		        }),
 	
 		        reset: function () {
+		            var modeCreator;
+	
 		            // Reset cipher
 		            Cipher.reset.call(this);
 	
@@ -3754,14 +4021,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 		            // Reset block mode
 		            if (this._xformMode == this._ENC_XFORM_MODE) {
-		                var modeCreator = mode.createEncryptor;
+		                modeCreator = mode.createEncryptor;
 		            } else /* if (this._xformMode == this._DEC_XFORM_MODE) */ {
-		                var modeCreator = mode.createDecryptor;
-	
+		                modeCreator = mode.createDecryptor;
 		                // Keep at least one block in the buffer for unpadding
 		                this._minBufferSize = 1;
 		            }
-		            this._mode = modeCreator.call(mode, this, iv && iv.words);
+	
+		            if (this._mode && this._mode.__creator == modeCreator) {
+		                this._mode.init(this, iv && iv.words);
+		            } else {
+		                this._mode = modeCreator.call(mode, this, iv && iv.words);
+		                this._mode.__creator = modeCreator;
+		            }
 		        },
 	
 		        _doProcessBlock: function (words, offset) {
@@ -3769,6 +4041,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		        },
 	
 		        _doFinalize: function () {
+		            var finalProcessedBlocks;
+	
 		            // Shortcut
 		            var padding = this.cfg.padding;
 	
@@ -3778,10 +4052,10 @@ return /******/ (function(modules) { // webpackBootstrap
 		                padding.pad(this._data, this.blockSize);
 	
 		                // Process final blocks
-		                var finalProcessedBlocks = this._process(!!'flush');
+		                finalProcessedBlocks = this._process(!!'flush');
 		            } else /* if (this._xformMode == this._DEC_XFORM_MODE) */ {
 		                // Process final blocks
-		                var finalProcessedBlocks = this._process(!!'flush');
+		                finalProcessedBlocks = this._process(!!'flush');
 	
 		                // Unpad data
 		                padding.unpad(finalProcessedBlocks);
@@ -3873,15 +4147,17 @@ return /******/ (function(modules) { // webpackBootstrap
 		         *     var openSSLString = CryptoJS.format.OpenSSL.stringify(cipherParams);
 		         */
 		        stringify: function (cipherParams) {
+		            var wordArray;
+	
 		            // Shortcuts
 		            var ciphertext = cipherParams.ciphertext;
 		            var salt = cipherParams.salt;
 	
 		            // Format
 		            if (salt) {
-		                var wordArray = WordArray.create([0x53616c74, 0x65645f5f]).concat(salt).concat(ciphertext);
+		                wordArray = WordArray.create([0x53616c74, 0x65645f5f]).concat(salt).concat(ciphertext);
 		            } else {
-		                var wordArray = ciphertext;
+		                wordArray = ciphertext;
 		            }
 	
 		            return wordArray.toString(Base64);
@@ -3901,6 +4177,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		         *     var cipherParams = CryptoJS.format.OpenSSL.parse(openSSLString);
 		         */
 		        parse: function (openSSLStr) {
+		            var salt;
+	
 		            // Parse base64
 		            var ciphertext = Base64.parse(openSSLStr);
 	
@@ -3910,7 +4188,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		            // Test for salt
 		            if (ciphertextWords[0] == 0x53616c74 && ciphertextWords[1] == 0x65645f5f) {
 		                // Extract salt
-		                var salt = WordArray.create(ciphertextWords.slice(2, 4));
+		                salt = WordArray.create(ciphertextWords.slice(2, 4));
 	
 		                // Remove salt from ciphertext
 		                ciphertextWords.splice(0, 4);
@@ -4056,14 +4334,19 @@ return /******/ (function(modules) { // webpackBootstrap
 		         *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32);
 		         *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32, 'saltsalt');
 		         */
-		        execute: function (password, keySize, ivSize, salt) {
+		        execute: function (password, keySize, ivSize, salt, hasher) {
 		            // Generate random salt
 		            if (!salt) {
 		                salt = WordArray.random(64/8);
 		            }
 	
 		            // Derive key and IV
-		            var key = EvpKDF.create({ keySize: keySize + ivSize }).compute(password, salt);
+		            if (!hasher) {
+		                var key = EvpKDF.create({ keySize: keySize + ivSize }).compute(password, salt);
+		            } else {
+		                var key = EvpKDF.create({ keySize: keySize + ivSize, hasher: hasher }).compute(password, salt);
+		            }
+	
 	
 		            // Separate key and IV
 		            var iv = WordArray.create(key.words.slice(keySize), ivSize * 4);
@@ -4110,7 +4393,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		            cfg = this.cfg.extend(cfg);
 	
 		            // Derive key and other params
-		            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize);
+		            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, cfg.salt, cfg.hasher);
 	
 		            // Add IV to config
 		            cfg.iv = derivedParams.iv;
@@ -4149,7 +4432,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		            ciphertext = this._parse(ciphertext, cfg.format);
 	
 		            // Derive key and other params
-		            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt);
+		            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt, cfg.hasher);
 	
 		            // Add IV to config
 		            cfg.iv = derivedParams.iv;
@@ -4166,13 +4449,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 16 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(12), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15), __webpack_require__(17));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -4898,11 +5181,20 @@ return /******/ (function(modules) { // webpackBootstrap
 		            // Shortcuts
 		            var key = this._key;
 		            var keyWords = key.words;
+		            // Make sure the key length is valid (64, 128 or >= 192 bit)
+		            if (keyWords.length !== 2 && keyWords.length !== 4 && keyWords.length < 6) {
+		                throw new Error('Invalid key length - 3DES requires the key length to be 64, 128, 192 or >192.');
+		            }
+	
+		            // Extend the key according to the keying options defined in 3DES standard
+		            var key1 = keyWords.slice(0, 2);
+		            var key2 = keyWords.length < 4 ? keyWords.slice(0, 2) : keyWords.slice(2, 4);
+		            var key3 = keyWords.length < 6 ? keyWords.slice(0, 2) : keyWords.slice(4, 6);
 	
 		            // Create DES instances
-		            this._des1 = DES.createEncryptor(WordArray.create(keyWords.slice(0, 2)));
-		            this._des2 = DES.createEncryptor(WordArray.create(keyWords.slice(2, 4)));
-		            this._des3 = DES.createEncryptor(WordArray.create(keyWords.slice(4, 6)));
+		            this._des1 = DES.createEncryptor(WordArray.create(key1));
+		            this._des2 = DES.createEncryptor(WordArray.create(key2));
+		            this._des3 = DES.createEncryptor(WordArray.create(key3));
 		        },
 	
 		        encryptBlock: function (M, offset) {
@@ -4941,13 +5233,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 17 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(12), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15), __webpack_require__(17));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
@@ -5138,13 +5430,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	;(function (root, factory, undef) {
 		if (true) {
 			// CommonJS
-			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(12), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15));
+			module.exports = exports = factory(__webpack_require__(5), __webpack_require__(13), __webpack_require__(14), __webpack_require__(15), __webpack_require__(17));
 		}
 		else if (typeof define === "function" && define.amd) {
 			// AMD
