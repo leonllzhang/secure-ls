@@ -1,6 +1,6 @@
 import constants from './constants';
 import CryptoJSWordArray from './WordArray';
-import PBKDF2 from 'crypto-js/pbkdf2';
+import PBKDF2 from 'crypto-js-dm/pbkdf2';
 
 let utils = {
   metaKey: '_secure__ls__metadata',

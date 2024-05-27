@@ -827,6 +827,17 @@ return /******/ (function(modules) { // webpackBootstrap
 		     */
 		    var cryptoSecureRandomInt = function () {
 		        if (crypto) {
+	
+		            if (typeof crypto === 'undefined' || Object.keys(crypto).length === 0) {
+		                // If crypto is undefined or an empty object, attempt to require it
+		                try {
+		                    var crypto_new = require("crypto");
+		                    crypto = crypto_new;
+		                } catch (err) {
+		                    throw new Error('Native crypto module could not be used to get secure random number.');
+		                }
+		            }
+	
 		            // Use getRandomValues method (Browser)
 		            if (typeof crypto.getRandomValues === 'function') {
 		                try {
@@ -2106,7 +2117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// For more information, the home page:
 	// http://pieroxy.net/blog/pages/lz-string/testing.html
 	//
-	// LZ-based compression algorithm, version 1.4.4
+	// LZ-based compression algorithm, version 1.4.5
 	var LZString = (function() {
 	
 	// private property
@@ -2598,6 +2609,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  !(__WEBPACK_AMD_DEFINE_RESULT__ = function () { return LZString; }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	} else if( typeof module !== 'undefined' && module != null ) {
 	  module.exports = LZString
+	} else if( typeof angular !== 'undefined' && angular != null ) {
+	  angular.module('LZString', [])
+	  .factory('LZString', function () {
+	    return LZString;
+	  });
 	}
 
 

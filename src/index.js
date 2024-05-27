@@ -4,10 +4,10 @@ import enc from './enc-utf8';
 
 import Base64 from './Base64';
 import LZString from 'lz-string/libs/lz-string';
-import AES from 'crypto-js/aes';
-import DES from 'crypto-js/tripledes';
-import RABBIT from 'crypto-js/rabbit';
-import RC4 from 'crypto-js/rc4';
+import AES from 'crypto-js-dm/aes';
+import DES from 'crypto-js-dm/tripledes';
+import RABBIT from 'crypto-js-dm/rabbit';
+import RC4 from 'crypto-js-dm/rc4';
 
 export default class SecureLS {
   constructor(config) {
